@@ -8,6 +8,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.necto.fruitgroceryapp.R
 import com.necto.fruitgroceryapp.data.api.ApiHelper
 import com.necto.fruitgroceryapp.data.api.RetrofitBuilder
 import com.necto.fruitgroceryapp.data.model.User
@@ -25,7 +26,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(layout.activity_main)
+        setContentView(R.layout.activity_main)
         setupViewModel()
         setupUI()
         setupObservers()
