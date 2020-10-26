@@ -8,10 +8,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.necto.fruitgroceryapp.R
-
 import com.necto.fruitgroceryapp.data.api.ApiHelper
-import com.necto.fruitgroceryapp.data.api.ApiServiceImpl
+import com.necto.fruitgroceryapp.data.api.RetrofitBuilder
 import com.necto.fruitgroceryapp.data.model.User
 import com.necto.fruitgroceryapp.ui.base.ViewModelFactory
 import com.necto.fruitgroceryapp.ui.main.view.adapter.MainAdapter
@@ -19,60 +17,71 @@ import com.necto.fruitgroceryapp.ui.main.viewmodel.MainViewModel
 import com.necto.fruitgroceryapp.utils.Status
 import kotlinx.android.synthetic.main.activity_main.*
 
+
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var mainViewModel: MainViewModel
+    private lateinit var viewModel: MainViewModel
     private lateinit var adapter: MainAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setupUI()
+        setContentView(layout.activity_main)
         setupViewModel()
-        setupObserver()
+        setupUI()
+        setupObservers()
+    }
+
+
+
+    private fun setupViewModel() {
+        viewModel = ViewModelProviders.of(
+            this,
+            ViewModelFactory(ApiHelper(RetrofitBuilder.apiService))
+        ).get(MainViewModel::class.java)
     }
 
     private fun setupUI() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = MainAdapter(arrayListOf())
         recyclerView.addItemDecoration(
-            DividerItemDecoration(recyclerView.context, (recyclerView.layoutManager as LinearLayoutManager).orientation
+            DividerItemDecoration(
+                recyclerView.context,
+                (recyclerView.layoutManager as LinearLayoutManager).orientation
             )
         )
         recyclerView.adapter = adapter
     }
 
-    private fun setupViewModel() {
-        mainViewModel = ViewModelProviders.of(this,
-            ViewModelFactory(ApiHelper(ApiServiceImpl())))
-            .get(MainViewModel::class.java)
-    }
-
-    private fun setupObserver() {
-        mainViewModel.getUsers().observe(this, Observer {
-            when (it.status) {
-                Status.SUCCESS -> {
-                    progressBar.visibility = View.GONE
-                    it.data?.let { users -> renderList(users) }
-                    recyclerView.visibility = View.VISIBLE
-                }
-                Status.LOADING -> {
-                    progressBar.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
-                }
-                Status.ERROR -> {
-                    //Handle Error
-                    progressBar.visibility = View.GONE
-                    Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
+    private fun setupObservers() {
+        viewModel.getUsers().observe(this, Observer {
+            it?.let { resource ->
+                when (resource.status) {
+                    Status.SUCCESS -> {
+                        recyclerView.visibility = View.VISIBLE
+                        progressBar.visibility = View.GONE
+                        resource.data?.let { users -> retrieveList(users) }
+                    }
+                    Status.ERROR -> {
+                        recyclerView.visibility = View.VISIBLE
+                        progressBar.visibility = View.GONE
+                        Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
+                    }
+                    Status.LOADING -> {
+                        progressBar.visibility = View.VISIBLE
+                        recyclerView.visibility = View.GONE
+                    }
                 }
             }
         })
     }
 
-    private fun renderList(users: List<User>) {
-        adapter.addData(users)
-        adapter.notifyDataSetChanged()
+    private fun retrieveList(users: List<User>) {
+        adapter.apply {
+            addUsers(users)
+            notifyDataSetChanged()
+        }
     }
-
-
 }
+
+
+
